@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7124906866671195984
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5496736905747088974}
+  - component: {fileID: 2763432838435945226}
+  m_Layer: 0
+  m_Name: NaniteDragon
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5496736905747088974
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7124906866671195984}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2763432838435945226
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7124906866671195984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3755aabdef288ba45802296ed21bef26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  naniteMesh: {fileID: 11400000, guid: a1df48af57eea974494c1b3a360e30da, type: 2}
+  drawMode: 0
+  material: {fileID: 2100000, guid: b9af9578fe2411445853e08529e34af8, type: 2}
+  shadedMaterial: {fileID: 2100000, guid: 3d0061c4a1fae524aa809d6a3a095941, type: 2}
+  toggleDrawModeKey: 284
+  cullingCompute: {fileID: 7200000, guid: 1170123faeede97429c84118d7db5a68, type: 3}
+  cullingCamera: {fileID: 0}
+  errorThreshold: 1
+  skipGpuWhenOutsideFrustum: 1

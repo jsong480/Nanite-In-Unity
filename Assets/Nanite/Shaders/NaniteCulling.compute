@@ -1,0 +1,98 @@
+#pragma kernel CSMain
+
+struct NaniteCluster
+{
+    int indexStart;
+    int indexCount;
+    float3 boundsCenter;
+    float boundsRadius;
+    float lodError;
+    float parentLodError;
+    float3 lodBoundsCenter;
+    float lodBoundsRadius;
+    float3 parentBoundsCenter;
+    float parentBoundsRadius;
+    int lodLevel;
+};
+
+StructuredBuffer<NaniteCluster> _ClusterBuffer;
+AppendStructuredBuffer<uint> _VisibleClusterBuffer;
+RWStructuredBuffer<uint> _VisibleTriangleSum;
+
+float4x4 _NaniteObjectToWorld;
+float4 _FrustumPlanes[6];
+float3 _CameraPositionWS;
+float _ErrorThreshold;
+float _ScreenFactor;
+uint _ClusterCount;
+int _IsOrthographic;
+
+[numthreads(64, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _ClusterCount)
+        return;
+
+    NaniteCluster cluster = _ClusterBuffer[id.x];
+
+    float scaleX = length(float3(_NaniteObjectToWorld[0][0], _NaniteObjectToWorld[1][0], _NaniteObjectToWorld[2][0]));
+    float scaleY = length(float3(_NaniteObjectToWorld[0][1], _NaniteObjectToWorld[1][1], _NaniteObjectToWorld[2][1]));
+    float scaleZ = length(float3(_NaniteObjectToWorld[0][2], _NaniteObjectToWorld[1][2], _NaniteObjectToWorld[2][2]));
+    float maxScale = max(scaleX, max(scaleY, scaleZ));
+
+    float3 centerWS = mul(_NaniteObjectToWorld, float4(cluster.boundsCenter, 1.0)).xyz;
+    float radiusWS = cluster.boundsRadius * maxScale;
+
+    // --- Frustum culling (use cluster geometry bounds) ---
+    bool isVisible = true;
+    for (int i = 0; i < 6; i++)
+    {
+        float dist = dot(_FrustumPlanes[i].xyz, centerWS) + _FrustumPlanes[i].w;
+        if (dist < -radiusWS)
+        {
+            isVisible = false;
+            break;
+        }
+    }
+
+    if (!isVisible) return;
+
+    // --- LOD selection (use shared group bounds for watertight handoff) ---
+    float worldError = cluster.lodError * maxScale;
+    float parentWorldError = cluster.parentLodError * maxScale;
+
+    // Self error: distance measured from the shared lodBounds center
+    float3 lodBoundsCenterWS = mul(_NaniteObjectToWorld, float4(cluster.lodBoundsCenter, 1.0)).xyz;
+    float lodBoundsRadiusWS = cluster.lodBoundsRadius * maxScale;
+    float distToLodBounds = max(length(_CameraPositionWS - lodBoundsCenterWS) - lodBoundsRadiusWS, 0.001);
+
+    // Parent error: distance measured from the shared parentBounds center
+    float3 parentBoundsCenterWS = mul(_NaniteObjectToWorld, float4(cluster.parentBoundsCenter, 1.0)).xyz;
+    float parentBoundsRadiusWS = cluster.parentBoundsRadius * maxScale;
+    float distToParentBounds = max(length(_CameraPositionWS - parentBoundsCenterWS) - parentBoundsRadiusWS, 0.001);
+
+    float screenError = (_IsOrthographic != 0) ? (worldError * _ScreenFactor) : (worldError / distToLodBounds) * _ScreenFactor;
+    float parentScreenError = (_IsOrthographic != 0) ? (parentWorldError * _ScreenFactor) : (parentWorldError / distToParentBounds) * _ScreenFactor;
+
+    // Root clusters (no parent): force parent check to pass
+    if (cluster.parentLodError > 9000000.0)
+    {
+        parentScreenError = _ErrorThreshold + 1.0;
+    }
+
+    // Leaf clusters (LOD 0, error=0): force self check to pass
+    if (cluster.lodError <= 0.0001)
+    {
+        screenError = 0.0;
+    }
+
+    // Render this cluster if it's "good enough" but its parent is "too coarse"
+    bool isLODValid = (screenError <= _ErrorThreshold) && (parentScreenError > _ErrorThreshold);
+
+    if (isLODValid)
+    {
+        _VisibleClusterBuffer.Append(id.x);
+        uint triCount = (uint)cluster.indexCount / 3u;
+        InterlockedAdd(_VisibleTriangleSum[0], triCount);
+    }
+}
