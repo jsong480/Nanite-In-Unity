@@ -4,6 +4,8 @@ A small Unity prototype inspired by Nanite-style rendering: offline **meshlet cl
 
 **Unity:** 2022.3 LTS (see `ProjectSettings/ProjectVersion.txt`).
 
+**Demo video:** [YouTube — project walkthrough / demo](https://youtu.be/Gwo7bt9FCT0)
+
 ## Requirements
 
 - **Windows:** `Assets/Plugins/meshoptimizer.dll` is used by the editor build pipeline (`MeshOptimizerInterop`). Keep this file under version control when cloning.
